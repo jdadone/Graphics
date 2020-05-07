@@ -154,7 +154,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 // Inject all the input scalars
                 cmd.SetComputeFloatParam(ssGICS, HDShaderIDs._RaytracingIntensityClamp, giSettings.clampValueSS);
-
+                cmd.SetComputeVectorParam(ssGICS, HDShaderIDs._ColorPyramidUvScaleAndLimitPrevFrame, HDUtils.ComputeViewportScaleAndLimit(hdCamera.historyRTHandleProperties.previousViewportSize, hdCamera.historyRTHandleProperties.previousRenderTargetSize));
+                
                 // Bind all the input buffers
                 cmd.SetComputeTextureParam(ssGICS, currentKernel, HDShaderIDs._DepthTexture, m_SharedRTManager.GetDepthStencilBuffer());
                 cmd.SetComputeTextureParam(ssGICS, currentKernel, HDShaderIDs._NormalBufferTexture, m_SharedRTManager.GetNormalBuffer());

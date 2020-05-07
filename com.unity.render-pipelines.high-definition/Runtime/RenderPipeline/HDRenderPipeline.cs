@@ -4848,13 +4848,13 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 RTHandle Allocator1(string id, int frameIndex, RTHandleSystem rtHandleSystem)
                 {
-                    return rtHandleSystem.Alloc(m_SharedRTManager.ComputeDepthBufferMip1Size, TextureXR.slices, colorFormat: mainDepthBuffer.rt.graphicsFormat, dimension: TextureXR.dimension, enableRandomWrite: mainDepthBuffer.rt.enableRandomWrite, name: $"Depth History Buffer Mip 1"
+                    return rtHandleSystem.Alloc(Vector2.one * 0.5f, TextureXR.slices, colorFormat: mainDepthBuffer.rt.graphicsFormat, dimension: TextureXR.dimension, enableRandomWrite: mainDepthBuffer.rt.enableRandomWrite, name: $"Depth History Buffer Mip 1"
                     );
                 }
                 var mipchainInfo = m_SharedRTManager.GetDepthBufferMipChainInfo();
                 depthBuffer1 = hdCamera.GetCurrentFrameRT((int)HDCameraFrameHistoryType.Depth1) ?? hdCamera.AllocHistoryFrameRT((int)HDCameraFrameHistoryType.Depth1, Allocator1, 1);
                 for (int i = 0; i < hdCamera.viewCount; i++)
-                    cmd.CopyTexture(mainDepthBuffer, i, 0, mipchainInfo.mipLevelOffsets[1].x, mipchainInfo.mipLevelOffsets[1].y, mipchainInfo.mipLevelSizes[1].x, mipchainInfo.mipLevelSizes[1].y, depthBuffer1, i, 0, 0, 0);
+                    cmd.CopyTexture(mainDepthBuffer, i, 0, 0, 0, hdCamera.actualWidth / 2, hdCamera.actualHeight / 2, depthBuffer1, i, 0, 0, 0);
             }
 
             // Send buffers to client.

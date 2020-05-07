@@ -38,6 +38,7 @@ RW_TEXTURE2D_X(float4, _OutputFilteredBuffer);
 
 #define SPATIAL_FILTER_SIGMA_RATIO 1.0
 #define DEPTH_WEIGHT_MULTIPLIER 1000.0f
+#define NORMAL_WEIGHT_MULTIPLIER 5.0
 
 [numthreads(SSGI_FILTER_TILE_SIZE, SSGI_FILTER_TILE_SIZE, 1)]
 void SPATIAL_FILTER(uint3 dispatchThreadId : SV_DispatchThreadID , uint2 groupThreadId : SV_GroupThreadID , uint2 groupId : SV_GroupID)
@@ -50,9 +51,15 @@ void SPATIAL_FILTER(uint3 dispatchThreadId : SV_DispatchThreadID , uint2 groupTh
 #if HALF_RES
     // Get the posinputs of the current version of the pixel
     float depth = LOAD_TEXTURE2D_X(_DepthTexture, asuint(_DepthPyramidFirstMipLevelOffset) + centerCoord).r;
+    float4 normalCompressed = LOAD_TEXTURE2D_X(_NormalBufferTexture, centerCoord * 2 );
+    NormalData normalData;
+    DecodeFromNormalBuffer(normalCompressed, 0, normalData);
 #else
     // Get the posinputs of the current version of the pixel
     float depth = LOAD_TEXTURE2D_X(_DepthTexture, centerCoord).r;
+    float4 normalCompressed = LOAD_TEXTURE2D_X(_NormalBufferTexture, centerCoord);
+    NormalData normalData;
+    DecodeFromNormalBuffer(normalCompressed, 0, normalData);
 #endif
 
     // If the current point we are processing is a background point or the whole history should be discarded for an other reason, we invalidate the history
@@ -98,8 +105,14 @@ void SPATIAL_FILTER(uint3 dispatchThreadId : SV_DispatchThreadID , uint2 groupTh
             // Read the depth of the tap pixel
 #if HALF_RES
             float tapDepth = LOAD_TEXTURE2D_X(_DepthTexture, asuint(_DepthPyramidFirstMipLevelOffset) + tapCoord).r;
+            float4 normalCompressedTap = LOAD_TEXTURE2D_X(_NormalBufferTexture, tapCoord * 2);
+            NormalData normalDataTap;
+            DecodeFromNormalBuffer(normalCompressedTap, 0, normalDataTap);
 #else
             float tapDepth = LOAD_TEXTURE2D_X(_DepthTexture, tapCoord).r;
+            float4 normalCompressedTap = LOAD_TEXTURE2D_X(_NormalBufferTexture, tapCoord);
+            NormalData normalDataTap;
+            DecodeFromNormalBuffer(normalCompressedTap, 0, normalDataTap);
 #endif
             // Convert the tapped depth to linear for weight evaluation
             float tapz01 = Linear01Depth(tapDepth, _ZBufferParams);
@@ -107,8 +120,12 @@ void SPATIAL_FILTER(uint3 dispatchThreadId : SV_DispatchThreadID , uint2 groupTh
             // Compute the depth for this pixel
             float depthWeight = max(0.0, 1.0 - abs(tapz01 - centerz01) * DEPTH_WEIGHT_MULTIPLIER);
 
+            const float normalCloseness = sqr(sqr(max(0.0, dot(normalDataTap.normalWS, normalData.normalWS))));
+            const float normalError = 1.0 - normalCloseness;
+            const float normalWeight = max(0.0, (1.0 - normalError * NORMAL_WEIGHT_MULTIPLIER));
+
             // Compute the weight (skip computation for the center)
-            const float w = r ? gaussian(r, sigma) * depthWeight : 1.0;
+            const float w = r ? gaussian(r, sigma) * depthWeight * normalWeight : 1.0;
 
             // Accumuate this value
             colorSum += LOAD_TEXTURE2D_X(_InputNoisyBuffer, tapCoord).xyz * w;
@@ -221,7 +238,7 @@ void TEMPORAL_FILTER(uint3 dispatchThreadId : SV_DispatchThreadID
     else
     {
         // Otherwise we compute the accumulation factor
-        accumulationFactor = sampleCount >= 8.0 ?  8.0/9.0 : (sampleCount / (sampleCount + 1.0));
+        accumulationFactor = sampleCount >= 8.0 ? 0.97 : (sampleCount / (sampleCount + 1.0));
 
         // Update the sample count
         sampleCount = min(sampleCount + 1.0, 8.0);

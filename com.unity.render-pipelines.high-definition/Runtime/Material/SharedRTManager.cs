@@ -257,12 +257,6 @@ namespace UnityEngine.Rendering.HighDefinition
             return m_CameraDepthBufferMipChainInfo.textureSize;
         }
 
-        public Vector2Int ComputeDepthBufferMip1Size(Vector2Int screenSize)
-        {
-            m_CameraDepthBufferMipChainInfo.ComputePackedMipChainInfo(screenSize);
-            return m_CameraDepthBufferMipChainInfo.mipLevelSizes[1];
-        }
-
         public HDUtils.PackedMipChainInfo GetDepthBufferMipChainInfo()
         {
             return m_CameraDepthBufferMipChainInfo;
