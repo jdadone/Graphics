@@ -208,6 +208,8 @@ namespace UnityEngine.Rendering.HighDefinition
             public Shader depthValuesPS;
             [Reload("Runtime/RenderPipeline/RenderPass/MSAA/ColorResolve.shader")]
             public Shader colorResolvePS;
+            [Reload("Runtime/RenderPipeline/RenderPass/MSAA/MotionVecResolve.shader")]
+            public Shader resolveMotionVecPS;
 
             // Post-processing
             [Reload("Runtime/PostProcessing/Shaders/AlphaCopy.compute")]
@@ -277,6 +279,10 @@ namespace UnityEngine.Rendering.HighDefinition
 
             [Reload("Runtime/PostProcessing/Shaders/ContrastAdaptiveSharpen.compute")]
             public ComputeShader contrastAdaptiveSharpenCS;
+#if ENABLE_VIRTUALTEXTURES
+            [Reload("Runtime/VirtualTexturing/Shaders/DownsampleVTFeedback.compute")]
+            public ComputeShader VTFeedbackDownsample;
+#endif
 
             // Accumulation
             [Reload("Runtime/RenderPipeline/Accumulation/Shaders/Accumulation.compute")]
